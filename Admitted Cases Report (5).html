@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Admitted Cases Report</title>
+<style>
+:root{--bg:#f3effa;--sf:#fffdfa;--tx:#2e3347;--mu:#7b8099;--bd:#ddd5ee;--ac:#3f6f5a;--on:#d6f1e2;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#1d1b2b;--sf:#272538;--tx:#ece9f7;--mu:#a6a2c0;--bd:#3d3a57;--ac:#9fe0c0;--on:#2b4a40}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,sans-serif;padding:10px}
+h1{font-size:18px;margin:0 0 6px}.c{background:var(--sf);border:1px solid var(--bd);border-radius:10px;padding:10px;margin:8px 0}
+input,select,textarea{font:inherit;color:var(--tx);background:var(--bg);border:1px solid var(--bd);border-radius:7px;padding:6px 8px;width:100%}
+textarea{min-height:56px}label{display:block;font-size:12px;color:var(--mu);margin:6px 0 0}
+button{font:inherit;color:var(--tx);background:var(--sf);border:1px solid var(--bd);border-radius:16px;padding:5px 11px;margin:3px 3px 0 0}
+button.on,.chip.on{background:var(--on);border-color:var(--ac);color:var(--ac);font-weight:600}
+.p{background:var(--p,#b9cdf5);color:#26325a;border-color:var(--pb,#9db6ec);font-weight:600}.sw{width:44px;height:44px;border-radius:50%;border:4px solid #f1f1f1;padding:0;margin:4px 8px 4px 0}.sw.sel{border-color:#000}.st{font-size:11px;margin:0}.st th,.st td{padding:2px 5px;white-space:nowrap}.rt .st th{background:var(--on);color:#2e3347}.rt{width:100%;font-size:12px}.rt th{background:var(--p,#b9cdf5);color:#26325a;text-align:left}.rt td{vertical-align:top;white-space:normal;min-width:56px}.rt td:nth-child(5){min-width:220px}.rt td{background:var(--bg)}.rt .wh td{background:color-mix(in srgb,var(--on) 55%,var(--bg));color:var(--ac);font-weight:600}@media print{body{background:#fff;color:#000}button,.np{display:none}.c{border:0}@page{size:landscape}}.row{display:flex;gap:8px}.row>*{flex:1}
+.lb{width:50%;display:inline-block}.g{display:grid;grid-template-columns:repeat(2,1fr);gap:0 8px}
+summary{font-size:13px;color:var(--ac);margin-top:6px}small{color:var(--mu)}
+.t{overflow-x:auto}table{border-collapse:collapse;font-size:13px}td,th{border:1px solid var(--bd);padding:3px 7px;white-space:nowrap}
+pre{white-space:pre-wrap;font:13px/1.45 ui-monospace,monospace;user-select:all}
+.pl label{display:inline-block;margin-right:14px;font-size:14px;color:var(--tx)}.pl input{width:auto}
+</style></head><body><div id="R"></div>
+<script>
+const T=(l,o={})=>({k:l,l,y:'t',...o}),C=(l,o,x={})=>({k:l,l,y:'c',o,m:1,...x}),S=(l,o,x={})=>C(l,o,{m:0,...x}),X=(l,o={})=>({k:l,l,y:'x',...o}),
+LAT=(l='Laterality',o={})=>S(l,['Rt','Lt','Bilateral'],o),L=(k,l)=>({k,l,y:'L'}),
+TBDB={k:'tbdb',l:'TB/DB',y:'L2'},TC=L('tc','TC'),HB=L('hb','Hb'),INR=L('inr','PT/INR'),
+TM=o=>C('Tumour markers',o,{h:1,pre:'↑ '}),MR={k:'MRCP',l:'MRCP',y:'g',sub:[S('MPD/CBD diameter',['Normal','↑'],{k:'MRCPd',pre:'MRCP – MPD/CBD '}),T('MPD',{w:f=>f.MRCPd==='↑'}),T('CBD',{w:f=>f.MRCPd==='↑'})]},has=(f,k,v)=>[].concat(f[k]||[]).includes(v),
+NODE=[X('Node'),T('Node level',{w:f=>f.Node,ol:'level'}),LAT('Node laterality',{w:f=>f.Node,ol:''})],
+CU=[T('C/S',{k:'CS'})],CE=['CEA','CA19-9'],
+oc=v=>String(v).split(/\s*[,;]\s*/).map(s=>/^\d{1,2}$/.test(s)?s+' o’clock':s).join(', '),
+HL=['Umbilical','Inguinal','Incisional','Supraumbilical','Ventral','Paraumbilical','Epigastric'];
+const D=[
+{n:'Cholelithiasis',f:[T('Stone location'),T('Stone size'),TBDB,MR]},
+{n:'Choledocholithiasis',f:[T('Stone location'),T('Stone size'),TBDB,MR]},
+{n:'Obstructive jaundice',f:[S('Periampullary Ca type',['Ampullary','Pancreatic head','Distal CBD','Duodenal'],{pre:'Periampullary Ca – '}),TBDB,INR,TM(CE),MR]},
+{n:'Cholangitic abscess',f:[TBDB,TC,HB,INR,MR]},
+{n:'Cholecystitis',f:[S('Type',['Calculus','Acalculus']),TBDB,TC,HB,INR,MR]},
+{n:'Hernia',f:[C('Location',HL),LAT('Laterality',{w:f=>has(f,'Location','Inguinal')}),T('Incision',{w:f=>has(f,'Location','Incisional')}),L('tsh','TSH')&&{...L('tsh','TSH'),w:f=>['Umbilical','Paraumbilical','Epigastric','Ventral'].some(v=>has(f,'Location',v))},T('Defect size'),T('Content'),T('PV',{w:f=>has(f,'Location','Inguinal')}),T('PVRU',{w:f=>has(f,'Location','Inguinal')})]},
+{n:'Varicose veins',f:[T('Incompetency'),T('Grade'),X('Ulcer'),T('Ulcer site',{w:f=>f.Ulcer}),LAT('Limb',{w:f=>f.Ulcer})]},
+{n:'Fibroadenoma',f:[T('Site'),T('Size'),T('FNAC')]},
+{n:'Breast Ca',f:[T('Site'),LAT(),T('Size'),T('FNAC'),T('Trucut'),C('Receptors',['ER','PR','HER2'],{post:' +ve'}),X('Tumour board')]},
+{n:'Subacute appendicitis',f:[T('Size'),T('Location'),TC,HB]},
+{n:'Cellulitis',f:[S('Limb',['Lower limb','Upper limb']),LAT(),TC,HB]},
+{n:'Cervical lymphadenopathy',f:[T('Level'),LAT(),T('Size'),X('Inguinal node'),LAT('Inguinal laterality',{w:f=>f['Inguinal node'],ol:''}),X('Axillary node'),LAT('Axillary laterality',{w:f=>f['Axillary node'],ol:''})]},
+{n:'Pleomorphic adenoma',f:[T('Size'),LAT(),...NODE,T('FNAC')]},
+{n:'Submandibular swelling',f:[T('Size'),LAT(),...NODE,T('FNAC')]},
+{n:'Hydrocele',f:[LAT(),X('Cough impulse')]},
+{n:'Thyroid swelling',f:[S('Type',['STN','PTC','MNG']),T('Size'),LAT('Lobe'),...NODE,T('FNAC')]},
+{n:'Testicular swelling',f:[T('Size'),LAT(),TM(['AFP','β-hCG','LDH'])]},
+{n:'Acute pancreatitis',nm:f=>f.Necrotising?'Acute necrotising pancreatitis':'Acute pancreatitis',f:[X('Necrotising',{n:1}),X('Thrombosis'),C('Thrombus',['SVT','PVT'],{w:f=>f.Thrombosis}),X('Pseudocyst'),T('Size',{w:f=>f.Pseudocyst}),T('Location',{w:f=>f.Pseudocyst}),L('amylase','Amylase'),L('lipase','Lipase')]},
+{n:'Subacute bowel obstruction',nm:f=>f.Site?'Subacute '+f.Site.toLowerCase()+' bowel obstruction':'Subacute bowel obstruction',f:[S('Site',['Small','Large'],{n:1}),T('Transition point'),C('Passed',['Flatus','Stools'])]},
+{n:'Colorectal Ca',f:[T('Location'),T('Size'),T('Biopsy'),TM(CE),HB]},
+{n:'Haemorrhoids',f:[T('Location'),T('Colonoscopy')]},
+{n:'Fistula in ano',f:[T('External',{oc:1}),T('Internal',{oc:1}),T('Relation to sphincter')]},
+{n:'Fissure in ano',f:[]},
+{n:'Suture site granuloma',f:[T('Size'),TC]},
+{n:'Wound dehiscence',f:[TC,...CU]},
+{n:'Ulcer',nm:f=>f.Type?f.Type+' ulcer':'Ulcer',f:[S('Type',['Diabetic','Non-diabetic','Traumatic'],{n:1}),X('Necrotising fasciitis'),S('Limb',['Lower limb','Upper limb']),LAT(),TC,HB,...CU,C('Procedure',['Wound debridement','Ray amputation','BKA','AKA'],{h:1})]},
+{n:'Perianal abscess',f:[LAT(),TC,HB]},
+{n:'Abscess',f:[T('Site'),TC,HB]},
+{n:'Hepatic abscess',f:[TBDB,TC,HB,INR,S('Vit K',['Provided','Not provided'])]},
+{n:'Ca stomach',f:[T('Location'),T('Size'),T('Biopsy'),TM(CE),HB]},
+{n:'Oral Ca',f:[T('Site'),T('Biopsy')]}];
+const COM=['T2DM','SHTN','CKD','CAD','BA','PTB','AKI'],UC={k:'uc',l:'U/C',y:'L'};
+const R=document.getElementById('R'),$=s=>document.querySelector(s);
+let pts={},cur=null,view='list',date=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10),col=null,st='Local only (not signed in)',tm,P;
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;'),fmt=d=>d.slice(8)+'/'+d.slice(5,7),
+ks=g=>g.y==='L2'?['tb','db']:[g.k],nm=(df,f)=>df.nm?df.nm(f):df.n;
+function auto(i){const d=P.dx[i],df=D[i],f=d.f,ps=[];
+for(const g of df.f.flatMap(z=>z.sub||[z])){if(g.y[0]==='L'||g.n||(g.w&&!g.w(f)))continue;const v=f[g.k];if(!v||!v.length)continue;
+if(g.y==='x')ps.push(g.l);else if(g.y==='t')ps.push((g.ol===undefined?g.l+' ':g.ol?g.ol+' ':'')+(g.oc?oc(v):v)+(g.u&&f[g.k+'U']?' '+f[g.k+'U']:''));
+else ps.push((g.pre||'')+[].concat(v).join(', ')+(g.post||''))}
+lastDet=ps.join('; ');return nm(df,f)+(ps.length?' – '+ps.join('; '):'')}
+function labsFor(p){const m={};for(const i in p.dx)for(const g of D[i].f)if(g.y[0]==='L'&&(!g.w||g.w(p.dx[i].f)))m[g.k]=g;if(p.com.AKI||p.com.CKD)m.uc=UC;if(p.com.T2DM)m.cbg=CBG;return m}
+function series(p,g){return Object.keys(p.labs||{}).sort().filter(d=>ks(g).some(k=>p.labs[d][k])).map(d=>fmt(d)+' '+ks(g).map(k=>p.labs[d][k]||'–').join('/')).join(' → ')}
+function save(){P=pts[cur];if(!P)return;P.upd=Date.now();clearTimeout(tm);tm=setTimeout(async()=>{const o=JSON.parse(JSON.stringify(P));
+try{localStorage.setItem('pts',JSON.stringify(pts))}catch(e){}
+if(col)try{await col.doc(cur).set(o)}catch(e){st='Save failed';}},600)}
+const lab=g=>ks(g).map(k=>`<input class="${ks(g).length>1?'lb':''}" data-a="lab" data-k="${k}" placeholder="${ks(g).length>1?k.toUpperCase():g.l}" value="${esc((P.labs[date]||{})[k])}">`).join('');
+function fh(g,f,i){const v=f[g.k];if(g.w&&!g.w(f))return'';if(g.y==='g')return`<details ${g.sub.some(s=>f[s.k])?'open':''}><summary>${g.l}</summary>${g.sub.map(s=>fh(s,f,i)).join('')}</details>`;const a=`data-d="${i}" data-k="${esc(g.k)}"`;
+if(g.y==='L'||g.y==='L2')return`<label>${g.l}${lab(g)}</label>`;
+if(g.y==='t')return`<label>${g.l}<input data-a="f" ${g.oc?'data-oc=1 ':''}${a} value="${esc(v)}"></label>${g.u?['mm','cm'].map(u=>`<button class="${f[g.k+'U']===u?'on':''}" data-a="u" ${a} data-v="${u}">${u}</button>`).join(''):''}${g.oc?`<small class="oc">${v?oc(v):''}</small>`:''}`;
+if(g.y==='x')return`<button class="chip ${v?'on':''}" data-a="x" ${a}>${g.l}</button>`;
+const ch=g.o.map(o=>`<button class="${[].concat(v||[]).includes(o)?'on':''}" data-a="c" ${a} data-v="${o}">${o}</button>`).join('');
+return g.h?`<details ${v&&v.length?'open':''}><summary>${g.l}${g.pre?' (tap only if elevated)':''}</summary>${ch}</details>`:`<label>${g.l}</label>${ch}`}
+function VE(){P=pts[cur];let h=`<button data-a="back">← Patients</button> <small>${esc(st)}</small>
+<div class="c"><div class="row"><label>Name<input data-a="p" data-k="name" value="${esc(P.name)}"></label><label>Age<input data-a="p" data-k="age" value="${esc(P.age)}"></label></div>
+<div class="row"><label>Sex<select data-a="p" data-k="sex">${['','M','F'].map(s=>`<option ${P.sex===s?'selected':''}>${s}</option>`).join('')}</select></label><label>Ward<input data-a="p" data-k="ward" value="${esc(P.ward)}"></label></div>
+<div class="row"><label>Date of admission<input type="date" data-a="p" data-k="doa" value="${P.doa}"></label><label>Entry date (bloods)<input type="date" data-a="date" value="${date}"></label></div></div>
+<div class="c"><b>Diagnosis</b><br>${D.map((d,i)=>`<button class="${P.dx[i]?'on':''}" data-a="dx" data-d="${i}">${d.n}</button>`).join('')}</div>`;
+for(const i in P.dx){const d=P.dx[i],df=D[i];h+=`<div class="c"><b>${nm(df,d.f)}</b>${df.f.map(g=>fh(g,d.f,i)).join('')}
+<label>Diagnosis text (editable)<textarea data-a="txt" data-d="${i}">${esc(d.txt||(auto(i),lastNm))}</textarea></label>
+<div class="pl"><label><input type="checkbox" data-a="plan" data-d="${i}" data-v="c" ${d.p.c?'checked':''}> Conservative management</label><label><input type="checkbox" data-a="plan" data-d="${i}" data-v="s" ${d.p.s?'checked':''}> Surgical management</label></div></div>`}
+h+=`<div class="c"><label>Add diagnosis (free text)<textarea data-a="p" data-k="extra">${esc(P.extra)}</textarea></label><label>Findings of newer diagnosis (not in list)<textarea data-a="p" data-k="find">${esc(P.find)}</textarea></label></div>
+<div class="c"><details ${Object.values(P.com).some(Boolean)?'open':''}><summary>Comorbidities</summary>${COM.map(c=>`<button class="${P.com[c]?'on':''}" data-a="com" data-v="${c}">${c}</button>`).join('')}${P.com.AKI||P.com.CKD?`<label>Urea / Creatinine (U/C)${lab(UC)}</label>`:''}${P.com.T2DM?`<label>CBG (${fmt(date)})${lab(CBG)}</label>`:''}</details></div>`;
+const lf=labsFor(P),dts=[...new Set(Object.keys(P.labs))].sort().filter(d=>Object.values(lf).some(g=>ks(g).some(k=>P.labs[d][k])));
+if(dts.length)h+=`<div class="c t"><b>Blood values</b><table><tr><th>Date</th>${Object.values(lf).map(g=>`<th>${g.l}</th>`).join('')}</tr>${dts.map(d=>`<tr><td>${fmt(d)}</td>${Object.values(lf).map(g=>`<td>${ks(g).map(k=>P.labs[d][k]).filter(Boolean).join('/')}</td>`).join('')}</tr>`).join('')}</table></div>`;
+return h+`<div class="c"><button data-a="done">${P.done?'Re-admit (show in report)':'Discharged (hide from report)'}</button> <button data-a="del">${P.del?'Tap again to delete':'Delete'}</button></div>`}
+const act=()=>Object.entries(pts).filter(([i,p])=>!p.done).sort((a,b)=>String(a[1].ward).localeCompare(String(b[1].ward),undefined,{numeric:true}));
+function VL(){return`<h1>Admitted cases</h1><small>${esc(st)}</small><br><small>Everyone with edit access who opens this page signed in sees and updates the same patient list.</small><div class="c"><label>Entry date (bloods / CBG)<input type="date" data-a="date" value="${date}"></label>
+<button class="p" data-a="new">+ New patient</button> <button data-a="rep">Report</button></div><div class="c"><small>Colours</small><br>${TH.map((t,i)=>`<button data-a="th" data-v="${i}" class="sw ${i===thSel?'sel':''}" style="background:linear-gradient(135deg,${t[0]} 50%,${t[1]} 50%)"></button>`).join('')}</div>`+act().map(([i,p])=>`<div class="c" data-a="open" data-i="${i}"><b>${esc(p.name)||'(no name)'}</b> ${esc(p.age)}/${esc(p.sex)} · Ward ${esc(p.ward)}<br><small>${Object.keys(p.dx).map(k=>D[k].n).join(', ')}</small></div>`).join('')}
+function rep(){const lines=['ADMITTED CASES REPORT – '+date.split('-').reverse().join('/'),''];let n=0;
+for(const[i,p]of act()){if(p.doa>date)continue;P=p;n++;const day=Math.round((Date.parse(date)-Date.parse(p.doa))/864e5);
+lines.push(`${n}. ${p.name}, ${p.age}/${p.sex} – Ward ${p.ward} (DOA ${fmt(p.doa)}, post-admission day ${day})`);
+for(const k in p.dx){const d=p.dx[k];lines.push('   • '+(d.txt||auto(k))+((d.p.c||d.p.s)?' [Plan: '+[d.p.c&&'Conservative',d.p.s&&'Surgical'].filter(Boolean).join(' / ')+']':''))}
+if(p.extra)lines.push('   • '+p.extra);if(p.find)lines.push('   Findings: '+p.find);
+const cm=COM.filter(c=>p.com[c]);if(cm.length)lines.push('   Comorbs: '+cm.join(', '));
+for(const g of Object.values(labsFor(p))){const s=series(p,g);if(s)lines.push(`   ${g.l}: ${s}`)}lines.push('')}
+return lines.join('\n')}
+function VR(){return`<button data-a="back">← Patients</button> <button class="p" data-a="copy">Copy</button> <button data-a="print">Print</button> <button data-a="dl">Save file</button><div class="c"><pre id="rp">${esc(rep())}</pre></div>`}
+async function dl(b){const t=repText(),n='admitted-cases-'+date;try{const d=await window.claude.use('downloads');if(!d)throw 0;
+try{await d.save({filename:n+'.html',data:'<!doctype html><meta charset=utf-8><title>'+n+'</title><pre style="font:14px/1.5 monospace;white-space:pre-wrap">'+esc(t)+'</pre>'})}catch(e){await d.save({filename:n+'.txt',data:t})}}catch(e){b.textContent='Save unavailable – use Copy'}}
+function render(){R.innerHTML=view==='list'?VL():view==='rep'?VR():VE()}
+R.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b||b.tagName==='INPUT'||b.tagName==='TEXTAREA'||b.tagName==='SELECT')return;const a=b.dataset.a,d=b.dataset.d,k=b.dataset.k,v=b.dataset.v;
+if(a==='open'){cur=b.dataset.i;view='edit'}else if(a==='back')view='list';else if(a==='rep')view='rep';
+else if(a==='new'){cur='p'+Date.now().toString(36);pts[cur]={name:'',age:'',sex:'',ward:'',doa:date,dx:{},com:{},labs:{},extra:'',find:'',done:false};view='edit';save()}
+else if(a==='print'){try{window.print()}catch(x){}return}else if(a==='dl'){pdf(b,0);return}else if(a==='pdf'){pdf(b,1);return}else if(a==='rw'){repW=v}else if(a==='admx'){adm=''}else if(a==='th'){applyTheme(+v)}
+else if(a==='copy'){try{navigator.clipboard.writeText(repText());b.textContent='Copied'}catch(x){}return}
+else{P=pts[cur];
+if(a==='dx'){if(P.dx[d])delete P.dx[d];else P.dx[d]={f:{},txt:'',p:{c:0,s:0}}}
+else if(a==='x'){const f=P.dx[d].f;f[k]=!f[k]}
+else if(a==='c'){const f=P.dx[d].f,g=D[d].f.flatMap(z=>z.sub||[z]).find(z=>z.k===k);let x=[].concat(f[k]||[]);x=x.includes(v)?x.filter(z=>z!==v):g.m?[...x,v]:[v];f[k]=g.m?x:x[0]||''}
+else if(a==='u'){const f=P.dx[d].f;f[k+'U']=f[k+'U']===v?'':v}else if(a==='com')P.com[v]=!P.com[v];
+else if(a==='done'){P.done=!P.done;view='list'}
+else if(a==='del'){if(P.del){if(col)col.doc(cur).delete().catch(()=>{});delete pts[cur];view='list'}else{P.del=1;render();return}}
+save()}
+render()});
+R.addEventListener('input',e=>{const t=e.target,a=t.dataset.a;if(!a||a==='date'||a==='adm')return;P=pts[cur];const d=t.dataset.d,k=t.dataset.k;
+if(a==='f'){P.dx[d].f[k]=t.value;if(t.dataset.oc)t.parentNode.nextElementSibling.textContent=t.value?oc(t.value):'';const ta=$(`textarea[data-a=txt][data-d="${d}"]`);if(ta&&!P.dx[d].txt){auto(d);ta.value=lastNm}}
+else if(a==='lab'){(P.labs[date]=P.labs[date]||{})[k]=t.value}else if(a==='txt')P.dx[d].txt=t.value;else if(a==='p')P[k]=t.value;save()});
+R.addEventListener('change',e=>{const t=e.target,a=t.dataset.a;if(a==='adm'){adm=t.value;render()}else if(a==='date'){date=t.value||date;render()}
+else if(a==='plan'){P=pts[cur];P.dx[t.dataset.d].p[t.dataset.v]=t.checked?1:0;save()}});
+let repW='ALL';const CBG=L('cbg','CBG'),COLS=['#','Name','Age/Sex','Day','Diagnosis & plan','Comorbidities','Blood values'],
+THEMES=[['Lavender + Mint','#f3effa','#fffdfa','#ddd5ee','#d6f1e2','#3f6f5a','#b9cdf5','#9db6ec'],['Peach + Sky','#fff3ec','#fffdfb','#f2d9cc','#d9ecfb','#3a6a94','#ffd2bd','#f0b49a'],['Rose + Sage','#fcf0f3','#fffcfd','#f0d3db','#dcebd8','#4b6e45','#f7c6d3','#e8a5b8'],['Lemon + Lilac','#fffbe8','#fffffa','#eee3a8','#e6dcf7','#5d4a8f','#fbefa6','#e3d27a'],['Aqua + Blush','#eaf8f7','#fcffff','#c6e5e2','#fde1e1','#8a4a4a','#bdeae6','#8fd3cc']];
+function applyTheme(i){const s=document.documentElement.style,vs=['--bg','--sf','--bd','--on','--ac','--p','--pb','--tx','--mu','color-scheme'];try{localStorage.setItem('theme',i)}catch(e){}
+if(i<0){vs.forEach(v=>s.removeProperty(v));return}const t=THEMES[i];vs.slice(0,7).forEach((v,j)=>s.setProperty(v,t[j+1]));s.setProperty('--tx','#2e3347');s.setProperty('--mu','#6c718a');s.setProperty('color-scheme','light')}
+try{const th=localStorage.getItem('theme');if(th!==null)applyTheme(+th)}catch(e){}
+function series(p,g){return Object.keys(p.labs||{}).sort().filter(d=>d<=date&&ks(g).some(k=>p.labs[d][k])).map(d=>fmt(d)+' '+ks(g).map(k=>p.labs[d][k]).filter(Boolean).join('/')).join(' → ')}
+const wards=()=>[...new Set(act().filter(([i,p])=>p.doa<=date).map(([i,p])=>p.ward||'—'))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true})),rw=()=>{const w=wards();return w.includes(repW)?repW:'ALL'};
+function repData(w){const gs={};for(const[i,p]of act()){const wd=p.ward||'—';if(p.doa>date||(w!=='ALL'&&wd!==w))continue;P=p;const day=Math.round((Date.parse(date)-Date.parse(p.doa))/864e5)+1;
+const dx=Object.keys(p.dx).map(k=>{const d=p.dx[k];return'• '+(d.txt||auto(k))+((d.p.c||d.p.s)?' ['+[d.p.c&&'Conservative',d.p.s&&'Surgical'].filter(Boolean).join(' / ')+']':'')});
+if(p.extra)dx.push('• '+p.extra);if(p.find)dx.push('Findings: '+p.find);
+const bl=Object.values(labsFor(p)).map(g=>{const s=series(p,g);return s&&g.l+': '+s}).filter(Boolean);
+(gs[wd]=gs[wd]||[]).push([p.name,p.age+'/'+p.sex,day,dx.join('\n'),COM.filter(c=>p.com[c]).join(', '),bl.join('\n')])}return gs}
+function VR(){const ws=wards(),w=rw(),gs=repData(w);let tot=0;
+const body=Object.keys(gs).map(wd=>`<tr class="wh"><td colspan="7">Ward ${esc(wd)} – ${gs[wd].length} patient(s)</td></tr>`+gs[wd].map((r,j)=>{tot++;return`<tr><td>${j+1}</td>${r.map(c=>`<td>${esc(c).replace(/\n/g,'<br>')}</td>`).join('')}</tr>`}).join('')).join('');
+return`<div class="np"><button data-a="back">← Patients</button> <button class="p" data-a="pdf">PDF / WhatsApp</button> <button data-a="print">Print</button> <button data-a="copy">Copy</button>
+<label>Report date<input type="date" data-a="date" value="${date}"></label><div>${['ALL',...ws].map(x=>`<button class="${x===w?'on':''}" data-a="rw" data-v="${esc(x)}">${x==='ALL'?'All wards (consolidation)':'Ward '+esc(x)}</button>`).join('')}</div></div>
+<div class="c t"><b>Admitted cases report – ${date.split('-').reverse().join('/')}</b><table class="rt"><tr>${COLS.map(c=>`<th>${c}</th>`).join('')}</tr>${body}</table><p><b>Total admitted: ${tot}</b></p></div>`}
+function repText(){const gs=repData(rw()),o=['ADMITTED CASES REPORT – '+date.split('-').reverse().join('/')];let t=0;for(const wd of Object.keys(gs)){o.push('','Ward '+wd);gs[wd].forEach((r,j)=>{t++;o.push(`${j+1}. ${r[0]}, ${r[1]} – Day ${r[2]}`,...r[3].split('\n').map(x=>'   '+x),...(r[4]?['   Comorbs: '+r[4]]:[]),...r[5].split('\n').filter(Boolean).map(x=>'   '+x))})}o.push('','Total admitted: '+t);return o.join('\n')}
+const lj=u=>new Promise((r,j)=>{const s=document.createElement('script');s.src=u;s.onload=r;s.onerror=j;document.head.appendChild(s)}),ps=s=>String(s).replace(/→/g,'>').replace(/↑/g,'high ').replace(/β/g,'beta').replace(/[’‘]/g,"'").replace(/[–—]/g,'-').replace(/•/g,'-');
+async function pdf(b){const o=b.textContent;b.textContent='Preparing…';
+try{if(!window.jspdf){await lj('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');await lj('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js')}
+const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'}),gs=repData(rw()),body=[];let t=0;
+for(const wd of Object.keys(gs)){body.push([{content:ps('Ward '+wd+' - '+gs[wd].length+' patient(s)'),colSpan:7,styles:{fillColor:[225,232,250],fontStyle:'bold'}}]);gs[wd].forEach((r,j)=>{t++;body.push([j+1,...r.map(ps)])})}
+doc.setFontSize(13);doc.text('Admitted cases report - '+date.split('-').reverse().join('/'),30,32);
+doc.autoTable({startY:42,head:[COLS],body,styles:{fontSize:8,cellPadding:3,overflow:'linebreak'},headStyles:{fillColor:[185,205,245],textColor:20},columnStyles:{0:{cellWidth:22},3:{cellWidth:30},4:{cellWidth:250}},margin:{left:30,right:30}});
+doc.setFontSize(9);doc.text('Total admitted: '+t,30,doc.lastAutoTable.finalY+16);
+const fn='admitted-cases-'+date+'.pdf',blob=doc.output('blob'),f=new File([blob],fn,{type:'application/pdf'});
+try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:fn});b.textContent=o;return}}catch(e){if(e&&e.name==='AbortError'){b.textContent=o;return}}
+const d=await window.claude.use('downloads');await d.save({filename:fn,data:blob});b.textContent='PDF saved – attach it in WhatsApp'}catch(e){b.textContent='PDF failed'}setTimeout(()=>{b.textContent=o},5000)}
+let adm='',lastDet='',thSel=4;const TODAY=new Date(Date.now()-new Date().getTimezoneOffset()*6e4).toISOString().slice(0,10),
+TH=[['#A9C1CA','#E6ECF2'],['#A9C5BC','#DDE5DE'],['#A9D4CB','#FAFBF0'],['#D6B4DF','#FAFBF0'],['#C2BDC8','#D3DFE6'],['#CFDCE3','#E6ECF2'],['#D9E3D9','#FAFBF0'],['#A9D4CB','#E6ECF2']];
+D.forEach(d=>d.f.flatMap(z=>z.sub||[z]).forEach(g=>{if(g.y==='t'&&(/size/i.test(g.l)||g.l==='MPD'||g.l==='CBD'))g.u=1}));
+function applyTheme(i){thSel=i;try{localStorage.setItem('theme2',i)}catch(e){}const t=TH[i],s=document.documentElement.style;
+[['--bg',t[1]],['--sf','#ffffff'],['--bd',t[0]],['--on',t[0]],['--ac','#2e3347'],['--p',t[0]],['--pb',t[0]],['--tx','#2e3347'],['--mu','#6c718a'],['color-scheme','light']].forEach(([k,v])=>s.setProperty(k,v))}
+try{const s=localStorage.getItem('theme2');if(s!==null)thSel=+s}catch(e){}
+applyTheme(thSel);
+const wards2=()=>[...new Set(act().filter(([i,p])=>!adm||p.doa===adm).map(([i,p])=>p.ward||'—'))].sort((a,b)=>String(a).localeCompare(String(b),undefined,{numeric:true})),rw2=()=>{const w=wards2();return w.includes(repW)?repW:'ALL'},
+cols2=h=>['#','Name','Age/Sex','Day from admission','Diagnosis','Findings',...(h?['Investigations']:[]),'Plan'];
+function invOf(p){const lf=Object.values(labsFor(p)).filter(g=>Object.keys(p.labs||{}).some(d=>ks(g).some(k=>p.labs[d][k])));if(!lf.length)return null;
+const ds=Object.keys(p.labs).sort().filter(d=>lf.some(g=>ks(g).some(k=>p.labs[d][k])));return{h:['Date',...lf.map(g=>g.l)],r:ds.map(d=>[fmt(d),...lf.map(g=>ks(g).map(k=>p.labs[d][k]).filter(Boolean).join('/'))])}}
+function repRows(w){const gs={};for(const[i,p]of act()){const wd=p.ward||'—';if((adm&&p.doa!==adm)||(w!=='ALL'&&wd!==w))continue;P=p;
+const ks_=Object.keys(p.dx),dx=[],fd=[],pl=[];
+ks_.forEach(k=>{const d=p.dx[k],n=d.txt||nm(D[k],d.f);auto(k);dx.push(n);if(lastDet)fd.push(ks_.length>1?n+': '+lastDet:lastDet);if(d.p.c||d.p.s)pl.push((ks_.length>1?n+': ':'')+[d.p.c&&'Conservative',d.p.s&&'Surgical'].filter(Boolean).join(' / '))});
+if(p.extra)dx.push(p.extra);const cm=COM.filter(c=>p.com[c]);if(cm.length)dx.push('Comorbs: '+cm.join(', '));if(p.find)fd.push(p.find);
+(gs[wd]=gs[wd]||[]).push({name:p.name,as:p.age+'/'+p.sex,day:Math.round((Date.parse(TODAY)-Date.parse(p.doa))/864e5)+1,dx:dx.join('\n'),fd:fd.join('\n'),inv:invOf(p),plan:pl.join('\n')})}return gs}
+function VR(){const ws=wards2(),w=rw2(),gs=repRows(w),all=Object.values(gs).flat(),hi=all.some(r=>r.inv),nc=hi?8:7,e=s=>esc(s).replace(/\n/g,'<br>'),
+ih=r=>r.inv?`<table class="st"><tr>${r.inv.h.map(x=>`<th>${esc(x)}</th>`).join('')}</tr>${r.inv.r.map(q=>`<tr>${q.map(x=>`<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</table>`:'',
+body=Object.keys(gs).map(wd=>`<tr class="wh"><td colspan="${nc}">Ward ${esc(wd)} – ${gs[wd].length} patient(s)</td></tr>`+gs[wd].map((r,j)=>`<tr><td>${j+1}</td><td>${e(r.name)}</td><td>${e(r.as)}</td><td>${r.day}</td><td>${e(r.dx)}</td><td>${e(r.fd)}</td>${hi?`<td>${ih(r)}</td>`:''}<td>${e(r.plan)}</td></tr>`).join('')).join('');
+return`<div class="np"><button data-a="back">← Patients</button> <button class="p" data-a="pdf">Share PDF (WhatsApp)</button> <button data-a="dl">Download PDF</button> <button data-a="copy">Copy</button>
+<label>Admission date (pick from calendar)<input type="date" data-a="adm" value="${adm}"></label>${adm?'<button data-a="admx">Show all admissions</button>':''}<div>${['ALL',...ws].map(x=>`<button class="${x===w?'on':''}" data-a="rw" data-v="${esc(x)}">${x==='ALL'?'All wards (consolidation)':'Ward '+esc(x)}</button>`).join('')}</div></div>
+<div class="c t"><b>Admitted cases report${adm?' – admitted '+adm.split('-').reverse().join('/'):''}</b><table class="rt"><tr>${cols2(hi).map(c=>`<th>${c}</th>`).join('')}</tr>${body}</table><p><b>Total admitted: ${all.length}</b></p></div>`}
+function repText(){const gs=repRows(rw2()),o=['ADMITTED CASES REPORT'+(adm?' – admitted '+adm.split('-').reverse().join('/'):'')],sec=(l,s)=>s?['   '+l+': '+s.split('\n').join('; ')]:[];let t=0;
+for(const wd of Object.keys(gs)){o.push('','Ward '+wd);gs[wd].forEach((r,j)=>{t++;o.push(`${j+1}. ${r.name}, ${r.as} – Day ${r.day}`,...sec('Diagnosis',r.dx),...sec('Findings',r.fd),...(r.inv?['   Investigations:',...[r.inv.h,...r.inv.r].map(q=>'     '+q.join(' | '))]:[]),...sec('Plan',r.plan))})}o.push('','Total admitted: '+t);return o.join('\n')}
+async function pdf(b,mode){const o=b.textContent;b.textContent='Preparing…';
+try{if(!window.jspdf){await lj('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');await lj('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js')}
+const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'}),gs=repRows(rw2()),all=Object.values(gs).flat(),hi=all.some(r=>r.inv),body=[];
+for(const wd of Object.keys(gs)){body.push([{content:ps('Ward '+wd+' - '+gs[wd].length+' patient(s)'),colSpan:hi?8:7,styles:{fillColor:[225,232,250],fontStyle:'bold'}}]);
+gs[wd].forEach((r,j)=>body.push([j+1,r.name,r.as,r.day,r.dx,r.fd,...(hi?[r.inv?[r.inv.h,...r.inv.r].map(q=>q.join(' | ')).join('\n'):'']:[]),r.plan].map(ps)))}
+doc.setFontSize(13);doc.text('Admitted cases report'+(adm?' - admitted '+adm.split('-').reverse().join('/'):''),30,32);
+doc.autoTable({startY:42,head:[cols2(hi)],body,styles:{fontSize:8,cellPadding:3,overflow:'linebreak'},headStyles:{fillColor:[185,205,245],textColor:20},columnStyles:{0:{cellWidth:20},3:{cellWidth:38}},margin:{left:30,right:30}});
+doc.setFontSize(9);doc.text('Total admitted: '+all.length,30,doc.lastAutoTable.finalY+16);
+const fn='admitted-cases'+(adm?'-'+adm:'')+'.pdf',blob=doc.output('blob'),f=new File([blob],fn,{type:'application/pdf'});
+try{if(mode&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:fn});b.textContent=o;return}}catch(e){if(e&&e.name==='AbortError'){b.textContent=o;return}}
+const d=await window.claude.use('downloads');await d.save({filename:fn,data:blob});b.textContent=mode?'PDF saved – attach it in WhatsApp':'PDF downloaded'}catch(e){b.textContent='PDF failed'}setTimeout(()=>{b.textContent=o},5000)}
+let lastNm='';
+D.forEach(d=>d.f.flatMap(z=>z.sub||[z]).forEach(g=>{if(['Laterality','Limb','Lobe'].includes(g.k))g.dp=1}));
+function auto(i){const d=P.dx[i],df=D[i],f=d.f,ps=[],dp=[];
+for(const g of df.f.flatMap(z=>z.sub||[z])){if(g.y[0]==='L'||g.n||(g.w&&!g.w(f)))continue;const v=f[g.k];if(!v||v.length===0)continue;
+if(g.dp){dp.push([].concat(v).join(', '));continue}
+if(g.y==='x')ps.push(g.l);else if(g.y==='t')ps.push((g.ol===undefined?g.l+' ':g.ol?g.ol+' ':'')+(g.oc?oc(v):v)+(g.u&&f[g.k+'U']?' '+f[g.k+'U']:''));
+else ps.push((g.pre||'')+[].concat(v).join(', ')+(g.post||''))}
+lastDet=ps.join(' | ');lastNm=nm(df,f)+(dp.length?' ('+dp.join(', ')+')':'');return lastNm+(ps.length?' – '+ps.join(' | '):'')}
+const fdate=d=>d?d.split('-').reverse().join('/'):'',cols3=h=>['#','Name','Age/Sex','DOA','Diagnosis','Findings',...(h?['Investigations']:[]),'Plan'];
+function repRows(w){const gs={};for(const[i,p]of act()){const wd=p.ward||'—';if((adm&&p.doa!==adm)||(w!=='ALL'&&wd!==w))continue;P=p;
+const ks_=Object.keys(p.dx),dx=[],fd=[],pl=[];
+ks_.forEach(k=>{const d=p.dx[k];auto(k);const n=d.txt||lastNm;dx.push(n);if(lastDet)fd.push(ks_.length>1?n+': '+lastDet:lastDet);if(d.p.c||d.p.s)pl.push((ks_.length>1?n+': ':'')+[d.p.c&&'Conservative',d.p.s&&'Surgical'].filter(Boolean).join(' / '))});
+if(p.extra)dx.push(p.extra);dx.push(...COM.filter(c=>p.com[c]));if(p.find)fd.push(p.find);
+(gs[wd]=gs[wd]||[]).push({name:p.name,as:p.age+'/'+p.sex,doa:fdate(p.doa),dx:dx.join('/'),fd:fd.join('\n'),inv:invOf(p),plan:pl.join('\n')})}return gs}
+function VR(){const ws=wards2(),w=rw2(),gs=repRows(w),all=Object.values(gs).flat(),hi=all.some(r=>r.inv),nc=hi?8:7,e=s=>esc(s).replace(/\n/g,'<br>'),
+ih=r=>r.inv?`<table class="st"><tr>${r.inv.h.map(x=>`<th>${esc(x)}</th>`).join('')}</tr>${r.inv.r.map(q=>`<tr>${q.map(x=>`<td>${esc(x)}</td>`).join('')}</tr>`).join('')}</table>`:'',
+body=Object.keys(gs).map(wd=>`<tr class="wh"><td colspan="${nc}">Ward ${esc(wd)} – ${gs[wd].length} patient(s)</td></tr>`+gs[wd].map((r,j)=>`<tr><td>${j+1}</td><td>${e(r.name)}</td><td>${e(r.as)}</td><td>${r.doa}</td><td>${e(r.dx)}</td><td>${e(r.fd)}</td>${hi?`<td>${ih(r)}</td>`:''}<td>${e(r.plan)}</td></tr>`).join('')).join('');
+return`<div class="np"><button data-a="back">← Patients</button> <button class="p" data-a="pdf">Share PDF (WhatsApp)</button> <button data-a="dl">Download PDF</button> <button data-a="copy">Copy</button>
+<label>Admission date (pick from calendar)<input type="date" data-a="adm" value="${adm}"></label>${adm?'<button data-a="admx">Show all admissions</button>':''}<div>${['ALL',...ws].map(x=>`<button class="${x===w?'on':''}" data-a="rw" data-v="${esc(x)}">${x==='ALL'?'All wards (consolidation)':'Ward '+esc(x)}</button>`).join('')}</div></div>
+<div class="c t"><b>Admitted cases report${adm?' – admitted '+fdate(adm):''}</b><table class="rt"><tr>${cols3(hi).map(c=>`<th>${c}</th>`).join('')}</tr>${body}</table><p><b>Total admitted: ${all.length}</b></p></div>`}
+function repText(){const gs=repRows(rw2()),o=['ADMITTED CASES REPORT'+(adm?' – admitted '+fdate(adm):'')],sec=(l,s)=>s?['   '+l+': '+s.split('\n').join('; ')]:[];let t=0;
+for(const wd of Object.keys(gs)){o.push('','Ward '+wd);gs[wd].forEach((r,j)=>{t++;o.push(`${j+1}. ${r.name}, ${r.as} – DOA ${r.doa}`,...sec('Diagnosis',r.dx),...sec('Findings',r.fd),...(r.inv?['   Investigations:',...[r.inv.h,...r.inv.r].map(q=>'     '+q.join(' | '))]:[]),...sec('Plan',r.plan))})}o.push('','Total admitted: '+t);return o.join('\n')}
+async function pdf(b,mode){const o=b.textContent;b.textContent='Preparing…';
+try{if(!window.jspdf){await lj('https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js');await lj('https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js')}
+const doc=new jspdf.jsPDF({orientation:'landscape',unit:'pt',format:'a4'}),gs=repRows(rw2()),all=Object.values(gs).flat(),hi=all.some(r=>r.inv),body=[],tc=TH[thSel],rgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16)),c0=rgb(tc[0]),c1=rgb(tc[1]),mx=c0.map((x,i)=>Math.round((x+c1[i])/2));
+for(const wd of Object.keys(gs)){body.push([{content:ps('Ward '+wd+' - '+gs[wd].length+' patient(s)'),colSpan:hi?8:7,styles:{fillColor:mx,fontStyle:'bold'}}]);
+gs[wd].forEach((r,j)=>body.push([j+1,r.name,r.as,r.doa,r.dx,r.fd,...(hi?[r.inv?[r.inv.h,...r.inv.r].map(q=>q.join(' | ')).join('\n'):'']:[]),r.plan].map(ps)))}
+doc.setFontSize(13);doc.text('Admitted cases report'+(adm?' - admitted '+fdate(adm):''),30,32);
+doc.autoTable({startY:42,head:[cols3(hi)],body,styles:{fontSize:8,cellPadding:3,overflow:'linebreak',fillColor:c1,textColor:[46,51,71],lineColor:c0,lineWidth:.5},headStyles:{fillColor:c0,textColor:[46,51,71]},columnStyles:{0:{cellWidth:20},3:{cellWidth:50}},margin:{left:30,right:30}});
+doc.setFontSize(9);doc.text('Total admitted: '+all.length,30,doc.lastAutoTable.finalY+16);
+const fn='admitted-cases'+(adm?'-'+adm:'')+'.pdf',blob=doc.output('blob'),f=new File([blob],fn,{type:'application/pdf'});
+try{if(mode&&navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:fn});b.textContent=o;return}}catch(e){if(e&&e.name==='AbortError'){b.textContent=o;return}}
+const d=await window.claude.use('downloads');await d.save({filename:fn,data:blob});b.textContent=mode?'PDF saved – attach it in WhatsApp':'PDF downloaded'}catch(e){b.textContent='PDF failed'}setTimeout(()=>{b.textContent=o},5000)}
+render();
+try{pts=JSON.parse(localStorage.getItem('pts')||'{}');render()}catch(e){}
+(async()=>{try{const db=await window.claude?.use('db');if(!db)return;col=db.collection('patients');st='Shared · live (signed in)';
+col.onSnapshot(s=>{const n={};s.docs.forEach(d=>n[d.id]=d.data());if(cur&&pts[cur]&&view==='edit')n[cur]=pts[cur];pts=n;if(view!=='edit')render()},()=>{st='Offline'});
+const ol=JSON.parse(localStorage.getItem('pts')||'{}');for(const i in ol)if(!pts[i])col.doc(i).set(ol[i]).catch(()=>{})}catch(e){}})();
+</script></body></html>
